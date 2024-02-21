@@ -49,12 +49,19 @@ impl Scanner {
 
     fn scan_identifier(&mut self) -> Literal {
         let offset = self.offset;
+        let mut lit = String::new();
 
-        while is_letter(self.ch) {
-            self.next();
-        }
+        self.src
+            .as_bytes()
+            .iter()
+            .skip(offset + 1)
+            .filter(move |&&c| is_letter(c))
+            .for_each(|&c| lit.push(c as char));
 
-        self.src[offset..self.offset].into()
+        self.offset += lit.len();
+        self.rd_offset = self.offset;
+
+        lit
     }
 
     pub fn scan(&mut self) -> (Token, Position, Literal) {
