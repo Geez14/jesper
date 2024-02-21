@@ -54,7 +54,7 @@ impl Scanner {
         self.src
             .as_bytes()
             .iter()
-            .skip(offset + 1)
+            .skip(offset)
             .filter(move |&&c| is_letter(c))
             .for_each(|&c| lit.push(c as char));
 
@@ -64,22 +64,23 @@ impl Scanner {
         lit
     }
 
+    fn position(&self) -> Position {
+        Position {
+            filename: self.filename.clone(),
+            offset: self.offset,
+            line: self.line_no,
+            column: self.offset - self.line_offset + 1,
+        }
+    }
+
     pub fn scan(&mut self) -> (Token, Position, Literal) {
         if !self.ch.is_ascii_digit() && is_letter(self.ch) {
-            let offset = self.offset;
+            let pos = self.position();
+
             let lit = self.scan_identifier();
             let tok = token::lookup(lit.as_str());
 
-            return (
-                tok,
-                Position {
-                    filename: self.filename.clone(),
-                    offset,
-                    line: self.line_no,
-                    column: self.offset - self.line_offset + 1,
-                },
-                lit,
-            );
+            return (tok, pos, lit);
         }
 
         todo!()

@@ -3,7 +3,9 @@ mod token;
 mod scanner;
 
 fn main() {
-    println!("Hello, world!");
-
     avideb::visible();
+
+    let mut l = scanner::Scanner::new("main".into(), "repl".into());
+
+    println!("tok = {:?}", l.scan());
 }

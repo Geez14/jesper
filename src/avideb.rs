@@ -3,5 +3,5 @@ pub fn visible() {
 }
 
 fn hidden() {
-    println!("You can't see me");
+    println!("This is rat programming language.");
 }

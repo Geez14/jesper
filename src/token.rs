@@ -1,5 +1,6 @@
 pub type Literal = String;
 
+#[derive(Debug, Clone)]
 pub struct Position {
     pub filename: String,
     pub offset: usize,
@@ -8,6 +9,7 @@ pub struct Position {
 }
 
 #[allow(non_camel_case_types)]
+#[derive(Debug, Hash, PartialEq, Eq, PartialOrd, Clone, Copy)]
 pub enum Token {
     ILLEGAL,
     EOF,
