@@ -72,18 +72,63 @@ impl<E: Fn(Position, String)> Scanner<E> {
         lit
     }
 
-    fn scan_number(&mut self) -> (Token, Literal) {
+    fn scan_number(&mut self) -> Token {
         if self.ch == b'0' {
             match self.peek() {
-                b'b' => {}
-                b'x' | b'X' => {}
-                b'0'..=b'7' => {}
-                _ => {}
+                b'b' => {
+                    self.next();
+                    while is_bin(self.ch) {
+                        self.next();
+                    }
+                    if is_letter(self.ch) {
+                        return Token::ILLEGAL;
+                    }
+                    Token::BINARY
+                }
+                b'x' | b'X' => {
+                    self.next();
+                    while is_hex(self.ch) {
+                        self.next();
+                    }
+                    if is_letter(self.ch) {
+                        return Token::ILLEGAL;
+                    }
+                    Token::HEX
+                }
+                b'0'..=b'7' => {
+                    self.next();
+                    while is_octal(self.ch) {
+                        self.next();
+                    }
+                    if is_letter(self.ch) {
+                        return Token::ILLEGAL;
+                    }
+                    Token::OCTAL
+                }
+                _ => Token::ILLEGAL,
             }
+        } else {
+            while is_digit(self.ch) {
+                self.next()
+            }
+            Token::INTEGER
         }
-
-        todo!()
     }
+
+    // Akash Lohar
+    // fn scan_number(&mut self) -> (Token, Literal) {
+    //     let curr_offset = self.offset;
+    //     if self.ch == b'0' {
+    //         match self.peek() {
+    //             b'b' => {}
+    //             b'x' | b'X' => {}
+    //             b'0'..=b'7' => {}
+    //             _ => {}
+    //         }
+    //     }
+
+    //     todo!()
+    // }
 
     fn position(&self) -> Position {
         Position {
@@ -169,10 +214,21 @@ impl<E: Fn(Position, String)> Scanner<E> {
             return (tok, pos, lit);
         }
 
-        if is_digit(self.ch) {
-            let (tok, lit) = self.scan_number();
-            return (tok, pos, lit);
+        if self.ch == b'-' || self.ch == b'+' {
+            if is_digit(self.peek()) {
+                let pos = self.position();
+                self.next();
+                let tok = self.scan_number();
+                let lit = self.src[pos.offset..self.offset].to_string();
+                return (tok, pos, lit);
+            }
         }
+
+        // can create a little bug
+        // if is_digit(self.ch) {
+        //     let (tok, lit) = self.scan_number();
+        //     return (tok, pos, lit);
+        // }
 
         let tok = match self.ch {
             b'=' => self.switch(Token::ASSIGN, b'=', Token::EQL),
@@ -187,7 +243,15 @@ impl<E: Fn(Position, String)> Scanner<E> {
                 b'>',
                 Token::ARROW,
             ),
-
+            b'*' => self.switch(Token::ASTERISK, b'=', Token::MUL_ASSIGN),
+            b'>' => {
+                let mut token = self.switch2(Token::GT, b'=', Token::GEQ, b'>', Token::SHR);
+                if token == Token::SHR && self.peek() == b'=' {
+                    self.next();
+                    token = Token::SHR_ASSIGN;
+                }
+                token
+            }
             b'(' => Token::LPAREN,
             _ => Token::ILLEGAL,
         };
@@ -202,6 +266,20 @@ impl<E: Fn(Position, String)> Scanner<E> {
 
 fn is_digit(c: u8) -> bool {
     c >= b'0' && c <= b'9'
+}
+
+// added two function
+
+fn is_bin(c: u8) -> bool {
+    c >= b'0' && c <= b'1'
+}
+
+fn is_octal(c: u8) -> bool {
+    c >= b'0' && c <= b'7'
+}
+
+fn is_hex(c: u8) -> bool {
+    (c >= b'a' && c < b'f') || (c >= b'A' && c <= b'F') || (is_digit(c))
 }
 
 fn is_letter(c: u8) -> bool {
